@@ -15,31 +15,7 @@ angular.module('starter.controllers', [])
       panControl: false,
       zoomControl: false,
       streetViewControl: false,
-      styles: [{'featureType':'poi',
-                'elementType': 'labels',
-                'stylers':[{'visibility':'off'}]},
-              {'featureType':'landscape.natural',
-                 'elementType':'geometry.fill',
-                 'stylers':[{'visibility':'on'},
-               {'color':'#e0efef'}]},
-             {'featureType':'poi',
-                 'elementType':'geometry.fill',
-                 'stylers':[{'visibility':'on'},
-               {'color': '#C5E3BF'}]},
-             {'featureType':'road',
-                 'elementType':'geometry',
-                 'stylers':[{'lightness':100},
-               {'visibility':'simplified'}]},
-             {'featureType':'road',
-                 'elementType':'geometry.fill',
-                 'stylers':[{'color': '#D1D1B8'}]},
-               {'featureType':'transit.line',
-                 'elementType':'geometry',
-                 'stylers':[{'visibility':'on'},
-               {'lightness':700}]},
-             {'featureType':'water',
-                 'elementType':'all',
-                 'stylers':[{'color':'#C6E2FF'}]}]
+      styles: [{"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#f7f1df"}]},{"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#d0e3b4"}]},{"featureType":"landscape.natural.terrain","elementType":"geometry","stylers":[{"visibility":"off"}]},{"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},{"featureType":"poi.business","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"poi.medical","elementType":"geometry","stylers":[{"color":"#fbd3da"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#bde6ab"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"labels","stylers":[{"visibility":"off"}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#ffe15f"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#efd151"}]},{"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#ffffff"}]},{"featureType":"road.local","elementType":"geometry.fill","stylers":[{"color":"black"}]},{"featureType":"transit.station.airport","elementType":"geometry.fill","stylers":[{"color":"#cfb2db"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#a2daf2"}]}]
     };
 
     $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
@@ -49,6 +25,7 @@ angular.module('starter.controllers', [])
     $scope.watchId = null;
     $scope.polys = [];
     $scope.markers = [];
+    $scope.stopovers = [];
     $scope.infowindows = [];
     $scope.index = 0;
     $scope.query = {};  //user queries
@@ -232,76 +209,191 @@ angular.module('starter.controllers', [])
     $scope.infowindows.length = 0;
   }
 
-  var showMarkers = function(){
+  var markerMaker = function(lat, lng, title, icon, stops, jaunt){
+    var marker = new google.maps.Marker({
+      position: new google.maps.LatLng(lat,lng),
+      map: $scope.map,
+      title: title,
+      icon: icon,
+      animation: google.maps.Animation.DROP,
+      stops: stops,
+      jaunt: jaunt
+    })
+    return marker;
+  };
 
-    for(var i = 0; i < $scope.jaunts.length; i++){
-      var contentString = '<div class="infoW">'+
+
+  var startContentString = function(id, title, rating, votes) {
+    var contentString = '<div class="infoW">'+
             '<a href="/#/tab/jaunts/' +
-            $scope.jaunts[i]._id +
+            id +
             '">' +
             '<h5 class="title">' +
-            $scope.jaunts[i].meta.title +
+            title +
             '</h5>' +
-            '<img src="/img/' +
-            Math.round($scope.jaunts[i].meta.rating) +
-            '.png" class="rating"' +
+            '<img src="/img/' + 
+            rating + 
+            '.png" class="rating"' + 
             '>' +
             '<small> via ' +
-            $scope.jaunts[i].meta.votes +
+            votes +
             ' votes</small>' +
             '</a>' +
             '</div>' /* closes infoW container*/;
+    return contentString
+  }
+  var stopoverContentString = function(jauntID, id, title) {
+    var contentString = '<div class="infoW">'+
+            '<a href="/#/tab/jaunts/' +
+            jauntID + '/' + id +
+            '">' +
+            '<h5 class="title">' +
+            title +
+            '</h5>' +
+            '</a>' +
+            '</div>' /* closes infoW container*/;
+    return contentString
+  }
 
-        var infowindow = new google.maps.InfoWindow({
-            content: contentString,
-            pixelOffset: new google.maps.Size(0, -60)
+  var getJauntInfoForWindow = function(jaunt) {
+    return [jaunt._id, jaunt.meta.title, Math.round(jaunt.meta.rating), jaunt.meta.votes];
+  };
+
+  var createInfoWindow = function(jaunt){
+    var infowindow = new google.maps.InfoWindow({
+        content: startContentString.apply(null, getJauntInfoForWindow(jaunt)),
+        pixelOffset: new google.maps.Size(0, -60)
+    });
+    return infowindow
+  }
+
+
+  var createStartMarker = function(jaunt) {
+    var greenBoneIcon = '/img/green-dog-bone-hi-35.png';
+    var lat = jaunt.start_location.coordinates[1];
+    var lng = jaunt.start_location.coordinates[0];
+    var title = jaunt.meta.title;
+    var stops = jaunt.stops;
+    var jaunt = jaunt;
+    return markerMaker(lat, lng, title, null, stops, jaunt);
+  };
+
+  var stopMarkerMaker = function(lat, lng, title, icon, id, jauntID){
+    var marker = new google.maps.Marker({
+      position: new google.maps.LatLng(lat,lng),
+      map: $scope.map,
+      title: title,
+      icon: icon,
+      animation: google.maps.Animation.DROP,
+      id: id,
+      jauntID: jauntID
+    })
+    return marker;
+  };
+
+  var createStopsMarker = function(stop) {
+    var whiteBoneIcon = '/img/white-bone-25.png';
+    var coordinates = stop.location.coordinates;
+    var lat = coordinates[1];
+    var lng = coordinates[0];
+    var title = stop.name;
+    var id = stop._id
+    var jauntID = stop.jauntID
+    return stopMarkerMaker(lat, lng, title, whiteBoneIcon, id, jauntID);
+  };
+
+
+  var showMarkers = function(){
+
+    var connectWindowAndMarker = function(marker, infowindow) {
+      google.maps.event.addListener(marker, 'click', function(event) {
+        $scope.markers.forEach(function(otherMarker) {
+          if (otherMarker !== marker) {
+            otherMarker.setAnimation(null);
+            otherMarker.setMap(null);
+          }
         });
 
-        var iconBase = '/img/jaunty_tiny.png';
-
-        var marker = new google.maps.Marker({
-            position: new google.maps.LatLng($scope.jaunts[i].start_location.coordinates[1],$scope.jaunts[i].start_location.coordinates[0]),
-            map: $scope.map,
-            title: $scope.jaunts[i].meta.title,
-            icon: iconBase,
-            animation: google.maps.Animation.DROP
-        });
-
-        $scope.markers.push(marker);
-        $scope.infowindows.push(infowindow);
-
-        // on marker click, animates/stop marker and opens/closes infowindow
-        var currentInnerKey = null;
-
-        google.maps.event.addListener(marker, 'click', (function(innerKey) {
-          return function(event) {
-            if (currentInnerKey !== null) {
-              $scope.markers[currentInnerKey].setAnimation(null);
-              $scope.infowindows[currentInnerKey].close();
+        removeFromMap($scope.stopovers);
+        $scope.infowindows.forEach(function(InfoWindow) {
+          InfoWindow.close();
+        })
+        if (marker.jaunt) {
+          $scope.polys.forEach(function(poly) {
+            var jaunt = marker.jaunt;
+            var jauntID = jaunt._id;
+            if (poly.jauntID !== jauntID) {
+              removeFromMap([poly])
             }
+          });
+        }
 
-            currentInnerKey = innerKey;
+        var stops = marker.stops;
+        if (stops) {        
+          for (var j = 0; j < stops.length; j++) {
+            var stop = stops[j];
+            if (stop) {
+              stop.jauntID = marker.jaunt._id
+              var stopover = createStopsMarker(stop);
+              $scope.stopovers.push(stopover)
 
-            $scope.markers[innerKey].setAnimation(google.maps.Animation.BOUNCE);
-            $scope.infowindows[innerKey].setPosition(event.latLng);
-            $scope.infowindows[innerKey].open($scope.map);
+              var infowindow2 = new google.maps.InfoWindow({
+                  content: stopoverContentString(stopover.jauntID, stopover.id, stopover.title),
+                  pixelOffset: new google.maps.Size(0, -60)
+              });
+
+              $scope.infowindows.push(infowindow2);
+              // connectWindowAndMarker(stopover, infowindow2)
+              var connect = function (infowindow2){
+                google.maps.event.addListener(stopover, 'click', function(event) {
+                  removeFromMap($scope.infowindows);
+                  infowindow2.setPosition(event.latLng);
+                  infowindow2.open($scope.map);
+                })
+              }(infowindow2);
+            }
           }
-        })(i));
+        }
 
-        // on infowindow close, stop marker animation
-        google.maps.event.addListener(infowindow, 'closeclick', (function(innerKey) {
-          return function(event) {
-            $scope.markers[innerKey].setAnimation(null);
-          }
-        })(i));
+        marker.setAnimation(google.maps.Animation.BOUNCE);
+        infowindow.setPosition(event.latLng);
+        infowindow.open($scope.map);
+      })
 
-        // on map click, stop marker animation and close infoboxes
-        google.maps.event.addListener($scope.map, 'click', (function(innerKey) {
-          return function(event) {
-            $scope.markers[innerKey].setAnimation(null);
-            $scope.infowindows[innerKey].close();
-          }
-        })(i));
+      google.maps.event.addListener(infowindow, 'closeclick', function(event) {
+          marker.setAnimation(null);
+          removeFromMap($scope.polys);
+          removeFromMap($scope.markers);
+          removeFromMap($scope.stopovers);
+          removeFromMap($scope.infowindows);
+          addToMap($scope.polys);
+          addToMap($scope.markers);
+      });
+
+      google.maps.event.addListener($scope.map, 'click', function(event) {
+          marker.setAnimation(null);
+          infowindow.close();
+          removeFromMap($scope.polys);
+          removeFromMap($scope.markers);
+          removeFromMap($scope.stopovers);
+          removeFromMap($scope.infowindows);
+          addToMap($scope.polys);
+          addToMap($scope.markers);
+      });
+
+    };
+
+    for(var i = 0; i < $scope.jaunts.length; i++){
+      var jaunt = $scope.jaunts[i];
+      var infowindow = createInfoWindow(jaunt);
+      var marker = createStartMarker(jaunt);
+
+      $scope.markers.push(marker);
+      $scope.infowindows.push(infowindow);
+
+
+      connectWindowAndMarker(marker, infowindow);
+
     }
   };
 

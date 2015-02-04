@@ -63,6 +63,7 @@ angular.module('starter.services')
       var colors = ['red', 'blue', 'green', 'orange', 'purple']; 
       var polys = [];
 
+
       for(var i = 0; i< jaunts.length; i++){
         var linePoints = [];
         for(var j = 0; j < jaunts[i].steps.length; j++){
@@ -74,6 +75,7 @@ angular.module('starter.services')
         }
         var poly = new google.maps.Polyline({strokeColor: colors[i%(colors.length)]});
         poly.setPath(linePoints);
+        poly.jauntID = jaunts[i]._id;
         polys.push(poly);
       }
       return polys;  
