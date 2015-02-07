@@ -11,17 +11,13 @@
     <a href="#/tab/map"><button class="button button-icon icon ion-ios7-navigate ion-ios-navigate"> Map</button></a>
   </ion-nav-buttons>
 
-  <ion-content>
-    <div class="list card">
+  <ion-content class="jaunt-detail">
+    <div class="list">
 
       <div class="item row">
 
         <div class="col">
-          <h2>{{jaunt.meta.title}}</h2>
-          <p>
-            <img src="/img/{{jaunt.meta.rating | number:0}}.png" style="width: 75px;">
-            <small>via {{jaunt.meta.votes}} votes</small>
-          </p>
+          <h1>{{jaunt.meta.title}}</h1>
         </div>
 
         <div class="col col-20 col-center">
@@ -34,18 +30,19 @@
       <div class="item item-body">
         <img class="full-image" ng-src="{{jaunt.stops[0].photoUrl || '/img/jaunt-logo.png'}}">
         <p>
-          Fancy:
-          <span ng-repeat="tag in jaunt.meta.tags">
-            {{tag}},
-          </span>
-           fun stuff
+          <div class="fancies">
+            <span class="fancies-title"><strong>Fancies:</strong></span>
+            <span class="fancies-tag" ng-repeat="tag in jaunttags track by $id(tag + $index)">
+              {{tag}}
+            </span>
+          </div>
         </p>
       </div>
 
-      <div class="list">
+      <div class="list stops-list">
         <ion-list>
-          <ion-item class="item-remove-animate item-avatar item-icon-right" ng-repeat="stop in jaunt.stops" type="item-text-wrap" href="#/tab/jaunts/{{jaunt._id}}/{{stop._id}}">
-            <img ng-src="{{stop.image || '/img/jaunt-logo.png'}}">
+          <ion-item class="stop card item-remove-animate item-avatar item-icon-right" ng-repeat="stop in jaunt.stops track by $id(stop)" type="item-text-wrap" href="#/tab/jaunts/{{jaunt._id}}/{{stop._id}}">
+            <img ng-src="{{stop.photoUrl || '/img/jaunt-logo.png'}}" class="stop-thumbnail">
             <h2>{{stop.name}}</h2>
             <p>{{stop.description}}</p>
             <i class="icon ion-chevron-right icon-accessory"></i>

@@ -55,7 +55,7 @@ angular.module('starter.controllers', ['ngSanitize'])
       });
     } else {
       console.log('found rootScope.pos in placeUser:', $rootScope.pos);
-      $rootScope.latLng = new google.maps.LatLng($rootScope.pos.coords.latitude, $rootScope.pos.coords.longitude); 
+      $rootScope.latLng = new google.maps.LatLng($rootScope.pos.coords.latitude, $rootScope.pos.coords.longitude);
       $scope.createUserMarker();
     }
     $scope.watchId = navigator.geolocation.watchPosition($scope.moveUser);
@@ -621,12 +621,20 @@ angular.module('starter.controllers', ['ngSanitize'])
 
 .controller('JauntDetailCtrl', function($scope, $stateParams, Jaunts, $rootScope) {
   $scope.jaunt = Jaunts.getJaunt($rootScope.jaunts, $stateParams.jauntId);
+  $scope.jaunttags = convertArrayToSet($scope.jaunt.meta.tags);
+
+  function convertArrayToSet(arr) {
+    var obj = {};
+    for(var i = 0; i < arr.length; i++) {
+      obj[arr[i]] = arr[i];
+    }
+    return obj;
+  }
 })
 
 
 
 .controller('NavigateCtrl', function($scope, $ionicLoading, $ionicActionSheet, $timeout, $ionicModal, Jaunts, $q, $rootScope) {
-
 })
 
 
