@@ -1,4 +1,12 @@
 <ion-view view-title="{{stop.name}}">
+
+  <ion-nav-buttons side="secondary">
+    <a href="#/tab/map"><button class="button button-icon icon ion-ios7-location">Map</button></a>
+  </ion-nav-buttons>
+
+  <button on-swipe-right="prevJaunt()" class="button">Prev</button>
+  <button on-swipe-left="nextJaunt()" class="button">Next</button>
+
   <ion-content class="padding">
 
 

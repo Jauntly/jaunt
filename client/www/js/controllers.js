@@ -79,7 +79,7 @@ angular.module('starter.controllers', ['ngSanitize'])
       $scope.userMarker.setPosition(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
     });
     // Check for a stop nearby when you're within a jaunt started
-    if ($scope.jauntStarted) {
+    if ($rootScope.jauntStarted) {
       $scope.checkForStop();
     }
   };
@@ -87,17 +87,19 @@ angular.module('starter.controllers', ['ngSanitize'])
       // console.log('location updated: ' + $rootScope.pos);
   $scope.checkForStop = function () {
     // console.log($rootScope.pos);
-    var userX = $rootScope.pos.D;    // coords.longitude;
-    var userY = $rootScope.pos.k;    // coords.latitude;
-    var stopovers = $scope.selectedJaunt.stops;
-
+    var userX = $rootScope.latLng.D;    // coords.longitude;
+    var userY = $rootScope.latLng.k;    // coords.latitude;
+    $rootScope.stopoverList = $scope.selectedJaunt.stops;
+    var stopovers = $rootScope.stopoverList;
     for (var i = 0; i < stopovers.length; i++) {
       var stopX = stopovers[i].location.coordinates[0];
       var stopY = stopovers[i].location.coordinates[1];
       // console.log('stopover location:', stopX, stopY);
 
+
       var degreeDist = Math.sqrt( Math.pow( (userX - stopX), 2 ) + Math.pow( (userY - stopY), 2) );
       // console.log('distance:', degreeDist);
+
 
       var meterDist = Jaunts.degreesToMeters(degreeDist);
       console.log('distance in meters:', meterDist);
@@ -105,9 +107,12 @@ angular.module('starter.controllers', ['ngSanitize'])
       if (meterDist < 40) {
         console.log("You've reached", stopovers[i].name);
 
+        $rootScope.stopNumber = i;
         // TRIGGER NAVIGATE TO PLACE DETAIL PAGE WHEN WITHIN CERTAIN DISTANCE
 
-        window.location = 'http://localhost:5000/#/tab/jaunts/'+stopovers[i].jauntID+'/'+stopovers[i]._id;
+        var tab = 'http://www.gojaunt.co/#/tab/jaunts/'+stopovers[i].jauntID+'/'+stopovers[i]._id;
+        console.log(tab);
+        window.location = tab;
       }
     }
   };
@@ -130,18 +135,20 @@ angular.module('starter.controllers', ['ngSanitize'])
   };
 
   $scope.endJaunt = function() {
-    $scope.jauntStarted = false;
+    $rootScope.jauntStarted = false;
     $scope.map.setZoom(14)
     $scope.triggerStatus();
     console.log("jaunt ended")
   }
 
   $scope.startJaunt = function() {
-    $scope.jauntStarted = true;
+    $rootScope.jauntStarted = true;
     $scope.map.setZoom(16);
     $scope.triggerStatus();
 
-    console.log('jaunt ended');
+    $scope.checkForStop();
+
+    console.log('jaunt started');
     // console.log($scope.selectedJaunt);
     // console.log(Jaunts);          // refers to service with a bunch of methods
     // console.log($scope.jaunts);   // array of jaunts - clear this.
@@ -455,7 +462,7 @@ angular.module('starter.controllers', ['ngSanitize'])
       });
 
       google.maps.event.addListener($scope.map, 'click', function(event) {
-        if (!$scope.jauntStarted) {
+        if (!$rootScope.jauntStarted) {
           marker.setAnimation(null);
           infowindow.close();
           $scope.$apply(function(){
@@ -645,6 +652,24 @@ angular.module('starter.controllers', ['ngSanitize'])
   console.log('$scope.stop.audioUrl');
   console.log($scope.stop.audioUrl);
   $scope.stop.audioUrl = $sce.trustAsResourceUrl($scope.stop.audioUrl);
+
+  $scope.prevJaunt = function() {
+
+    console.log('swipe right');
+    if ($rootScope.stopNumber < 1) {
+      return;
+    }
+    $rootScope.stopNumber -= 1;
+    // TRIGGER NAVIGATE TO PLACE DETAIL PAGE WHEN WITHIN CERTAIN DISTANCE
+    var tab = 'http://www.gojaunt.co/#/tab/jaunts/'+$rootScope.stopoverList[$rootScope.stopNumber].jauntID+'/'+stopoverList[$rootScope.stopNumber]._id;
+    window.location = tab;
+  };
+
+  $scope.nextJaunt = function() {
+    if ($rootScope.stopNumber >= $rootScope.stopoverList.length) {
+      return;
+    } 
+  }
 })
 
 
